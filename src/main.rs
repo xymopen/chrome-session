@@ -1,22 +1,40 @@
 use std::fs::File;
 use std::io::Result;
 use std::io::prelude::*;
-use byteorder::{ReadBytesExt, NativeEndian};
 
 const SESSION_PATH: &str = "./Session";
+
+// The signature at the beginning of the file = SSNS (Sessions).
+const FILE_SIGNATURE: i32 = 0x53534E53;
+
+#[repr(C)]
+struct FileHeader {
+    signature: i32,
+    version: i32,
+}
 
 fn main() -> Result<()> {
     let mut file = File::open(SESSION_PATH)?;
 
-    let mut buf: [u8; 4] = [0; 4];
-    file.read_exact(&mut buf)?;
-    assert!(buf == "SNSS".as_bytes());
+    let mut header = FileHeader {
+        signature: 0,
+        version: 0,
+    };
 
-    let version = file.read_i32::<NativeEndian>()?;
+    unsafe {
+        let buf = std::slice::from_raw_parts_mut(
+            &mut header as *mut _ as *mut u8,
+            std::mem::size_of::<FileHeader>()
+        );
 
-    println!("{:#04x?}", buf);
-    drop(buf);
-    println!("{}", version);
+        file.read_exact(buf)?;
+
+        drop(buf);
+    }
+
+    assert!(header.signature == FILE_SIGNATURE);
+    println!("{:#08x?}", header.signature);
+    println!("{}", header.version);
 
     return Ok(());
 }
