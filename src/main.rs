@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 use std::io::prelude::*;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate maplit;
@@ -20,6 +20,9 @@ struct FileFeature {
     encrypted: bool,
     with_marker: bool,
 }
+
+type CommandSize = u16;
+type CommandType = u8;
 
 lazy_static! {
     static ref FILE_VERSION: std::collections::HashMap<i32, FileFeature> = hashmap! {
@@ -65,6 +68,25 @@ fn main() -> Result<()> {
     let capability = FILE_VERSION.get(&header.version).unwrap();
 
     println!("{:?}", capability);
+
+    let mut size: CommandSize = 0;
+
+    read_type(&mut file, &mut size)?;
+
+    if size <= 0 {
+        return Err(Error::new(ErrorKind::InvalidData, "Invalid size"));
+    }
+
+    let mut command = vec![0; size as usize];
+
+    file.read_exact(&mut command)?;
+
+    let command_type: CommandType = command[0];
+    let body = &command[1..];
+
+    println!("Command size: {:?}", size);
+    println!("Command type: {:?}", command_type);
+    println!("Command body: {:?}", body);
 
     return Ok(());
 }
