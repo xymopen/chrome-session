@@ -30,6 +30,24 @@ lazy_static! {
     };
 }
 
+fn read_type<T>(src: &mut dyn Read, dst: &mut T) -> Result<()>
+where
+    T: std::marker::Sized,
+{
+    unsafe {
+        let buf = std::slice::from_raw_parts_mut(
+            dst as *mut _ as *mut u8,
+            std::mem::size_of::<T>()
+        );
+
+        src.read_exact(buf)?;
+
+        drop(buf);
+    }
+
+    return Ok(());
+}
+
 fn main() -> Result<()> {
     let mut file = File::open(SESSION_PATH)?;
 
@@ -38,16 +56,7 @@ fn main() -> Result<()> {
         version: 0,
     };
 
-    unsafe {
-        let buf = std::slice::from_raw_parts_mut(
-            &mut header as *mut _ as *mut u8,
-            std::mem::size_of::<FileHeader>()
-        );
-
-        file.read_exact(buf)?;
-
-        drop(buf);
-    }
+    read_type(&mut file, &mut header)?;
 
     assert!(header.signature == FILE_SIGNATURE);
     println!("{:#08x?}", header.signature);
