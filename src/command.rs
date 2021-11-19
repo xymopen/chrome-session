@@ -114,3 +114,103 @@ impl Command<'_> {
         CommandKind::from(self.id)
     }
 }
+
+
+
+// Various payload structures.
+#[repr(C)]
+#[derive(Debug)]
+struct ClosedPayload {
+  id: u8,
+  close_time: i64,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct WindowBoundsPayload2 {
+  window_id: u8,
+  x: i32,
+  y: i32,
+  w: i32,
+  h: i32,
+  is_maximized: bool,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct WindowBoundsPayload3 {
+  window_id: u8,
+  x: i32,
+  y: i32,
+  w: i32,
+  h: i32,
+  show_state: i32,
+}
+
+type ActiveWindowPayload = u8;
+
+#[repr(C)]
+#[derive(Debug)]
+struct IDAndIndexPayload {
+  id: u8,
+  index: i32,
+}
+
+type TabIndexInWindowPayload = IDAndIndexPayload;
+
+type TabNavigationPathPrunedFromBackPayload = IDAndIndexPayload;
+
+type SelectedNavigationIndexPayload = IDAndIndexPayload;
+
+type SelectedTabInIndexPayload = IDAndIndexPayload;
+
+type WindowTypePayload = IDAndIndexPayload;
+
+type TabNavigationPathPrunedFromFrontPayload = IDAndIndexPayload;
+
+#[repr(C)]
+#[derive(Debug)]
+struct TabNavigationPathPrunedPayload {
+  id: u8,
+  // Index starting which |count| entries were removed.
+  index: i32,
+  // Number of entries removed.
+  count: i32,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct SerializedToken {
+  // These fields correspond to the high and low fields of |base::Token|.
+  id_high: u64,
+  id_low: u64,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct TabGroupPayload {
+  tab_id: u8,
+  maybe_group: SerializedToken,
+  has_group: bool,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct PinnedStatePayload {
+  tab_id: u8,
+  pinned_state: bool,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct LastActiveTimePayload {
+  tab_id: u8,
+  last_active_time: i64,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+struct VisibleOnAllWorkspacesPayload {
+  window_id: u8,
+  visible_on_all_workspaces: bool,
+}
