@@ -25,7 +25,6 @@ struct FileFeature {
 }
 
 type CommandSize = u16;
-type Command<'a> = (u8, &'a[u8]);
 
 lazy_static! {
     static ref FILE_VERSION: std::collections::HashMap<i32, FileFeature> = hashmap! {
@@ -84,15 +83,15 @@ fn main() -> Result<()> {
 
     file.read_exact(&mut command)?;
 
-    let command: Command = (command[0], &command[1..]);
+    let command = Command::from(&command);
 
     println!("Command size: {:?}", size);
-    if let Some(kind) = command::CommandKind::from(command.0) {
+    if let Some(kind) = command.kind() {
         println!("Command type: {:?}", kind);
     } else {
-        println!("Command type: {:?}", command.0);
+        println!("Command type: {:?}", command.id());
     }
-    println!("Command body: {:?}", command.1);
+    println!("Command body: {:?}", command.payload());
     println!();
 
     return Ok(());

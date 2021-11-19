@@ -1,3 +1,5 @@
+pub type CommandID = u8;
+
 #[derive(Debug)]
 #[non_exhaustive]
 // Identifier for commands written to file.
@@ -49,7 +51,7 @@ pub enum CommandKind {
 }
 
 impl CommandKind {
-    pub fn from(x: u8) -> Option<CommandKind> {
+    pub fn from(x: CommandID) -> Option<CommandKind> {
         match x {
             0 => Some(CommandKind::SetTabWindow),
             // 1 => Some(CommandKind::SetWindowBounds),
@@ -84,5 +86,31 @@ impl CommandKind {
             32 => Some(CommandKind::SetWindowVisibleOnAllWorkspaces),
             _ => None,
         }
+    }
+}
+
+pub struct Command<'a> {
+    id: CommandID,
+    payload: &'a [u8],
+}
+
+impl Command<'_> {
+    pub fn from(data: &[u8]) -> Command<'_> {
+        Command {
+            id: data[0],
+            payload: &data[1..],
+        }
+    }
+
+    pub fn id(&self) -> CommandID {
+        self.id
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        self.payload
+    }
+
+    pub fn kind(&self) -> Option<CommandKind> {
+        CommandKind::from(self.id)
     }
 }
