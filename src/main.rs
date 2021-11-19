@@ -1,6 +1,9 @@
+mod command;
+
 use std::fs::File;
 use std::io::{Error, ErrorKind, Result};
 use std::io::prelude::*;
+pub use command::*;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate maplit;
 
@@ -84,8 +87,13 @@ fn main() -> Result<()> {
     let command: Command = (command[0], &command[1..]);
 
     println!("Command size: {:?}", size);
-    println!("Command type: {:?}", command.0);
+    if let Some(kind) = command::CommandKind::from(command.0) {
+        println!("Command type: {:?}", kind);
+    } else {
+        println!("Command type: {:?}", command.0);
+    }
     println!("Command body: {:?}", command.1);
+    println!();
 
     return Ok(());
 }
