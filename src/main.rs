@@ -1,11 +1,14 @@
 mod command;
+mod transmute;
 
-use std::fs::File;
-use std::io::{Error, ErrorKind, Result};
-use std::io::prelude::*;
 pub use command::*;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate maplit;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::{Error, ErrorKind, Result};
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate maplit;
 
 const SESSION_PATH: &str = "./Session";
 
@@ -35,33 +38,10 @@ lazy_static! {
     };
 }
 
-fn read_type<T>(src: &mut dyn Read, dst: &mut T) -> Result<()>
-where
-    T: std::marker::Sized,
-{
-    unsafe {
-        let buf = std::slice::from_raw_parts_mut(
-            dst as *mut _ as *mut u8,
-            std::mem::size_of::<T>()
-        );
-
-        src.read_exact(buf)?;
-
-        drop(buf);
-    }
-
-    return Ok(());
-}
-
 fn main() -> Result<()> {
     let mut file = File::open(SESSION_PATH)?;
 
-    let mut header = FileHeader {
-        signature: 0,
-        version: 0,
-    };
-
-    read_type(&mut file, &mut header)?;
+    let header = unsafe { transmute::from_reader::<FileHeader>(&mut file)? };
 
     assert!(header.signature == FILE_SIGNATURE);
     println!("{:#08x?}", header.signature);
@@ -71,9 +51,7 @@ fn main() -> Result<()> {
 
     println!("{:?}", capability);
 
-    let mut size: CommandSize = 0;
-
-    read_type(&mut file, &mut size)?;
+    let size = unsafe { transmute::from_reader::<CommandSize>(&mut file)? };
 
     if size <= 0 {
         return Err(Error::new(ErrorKind::InvalidData, "Invalid size"));
