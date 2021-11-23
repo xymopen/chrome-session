@@ -1,6 +1,5 @@
 // mess around the in-memory representation of a type
 use std::io::prelude::*;
-use std::io::Result;
 use std::marker::Sized;
 use std::mem;
 use std::slice;
@@ -29,13 +28,23 @@ pub unsafe fn as_bytes_mut<'a, T: Sized>(value: &'a mut T) -> &'a mut [u8] {
     return slice::from_raw_parts_mut(value as *mut T as *mut u8, mem::size_of::<T>());
 }
 
-pub unsafe fn from_reader<T: Sized>(reader: &mut dyn Read) -> Result<T> {
+unsafe fn from_bytes<T: Sized, E, Write>(write: Write) -> Result<T, E>
+where
+    Write: FnOnce(&mut [u8]) -> Result<(), E>,
+{
     let mut value = mem::MaybeUninit::<T>::uninit();
-    reader.read_exact(as_bytes_mut(&mut value))?;
+    write(as_bytes_mut(&mut value))?;
     return Ok(value.assume_init());
 }
 
-pub unsafe fn into_writer<'a, T: Sized>(value: &'a T, writer: &mut dyn Write) -> Result<()> {
+pub unsafe fn from_reader<T: Sized>(reader: &mut dyn Read) -> std::io::Result<T> {
+    return from_bytes(|dst| reader.read_exact(dst));
+}
+
+pub unsafe fn into_writer<'a, T: Sized>(
+    value: &'a T,
+    writer: &mut dyn Write,
+) -> std::io::Result<()> {
     writer.write_all(as_bytes_ref(value))?;
     return Ok(());
 }
