@@ -28,6 +28,23 @@ pub unsafe fn as_bytes_mut<'a, T: Sized>(value: &'a mut T) -> &'a mut [u8] {
     return slice::from_raw_parts_mut(value as *mut T as *mut u8, mem::size_of::<T>());
 }
 
+pub unsafe fn from_vec<T: Sized>(bytes: Vec<u8>) -> Option<Box<T>> {
+    if bytes.len() != mem::size_of::<T>() {
+        return None;
+    } else {
+        return Some(Box::<T>::from_raw(
+            Box::<[u8]>::into_raw(Box::<[u8]>::from(bytes)) as *mut T,
+        ));
+    }
+}
+
+pub unsafe fn into_vec<T: Sized>(value: Box<T>) -> Vec<u8> {
+    return Vec::<u8>::from(Box::<[u8]>::from_raw(slice::from_raw_parts_mut(
+        Box::<T>::into_raw(value) as *mut u8,
+        mem::size_of::<T>(),
+    )));
+}
+
 unsafe fn from_bytes<T: Sized, E, Write>(write: Write) -> Result<T, E>
 where
     Write: FnOnce(&mut [u8]) -> Result<(), E>,
