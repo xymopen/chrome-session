@@ -98,7 +98,21 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn from(mut data: Vec<u8>) -> Command {
+    pub fn id(&self) -> CommandID {
+        self.id
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        self.payload.as_slice()
+    }
+
+    pub fn kind(&self) -> Option<CommandKind> {
+        CommandKind::from(self.id)
+    }
+}
+
+impl From<Vec<u8>> for Command {
+    fn from(mut data: Vec<u8>) -> Self {
         let id = {
             let id_slice = &data[0..mem::size_of::<CommandID>()];
             let id_ref = unsafe { transmute::as_ref::<CommandID>(id_slice).unwrap() };
@@ -111,18 +125,6 @@ impl Command {
             id,
             payload,
         };
-    }
-
-    pub fn id(&self) -> CommandID {
-        self.id
-    }
-
-    pub fn payload(&self) -> &[u8] {
-        self.payload.as_slice()
-    }
-
-    pub fn kind(&self) -> Option<CommandKind> {
-        CommandKind::from(self.id)
     }
 }
 
