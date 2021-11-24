@@ -61,7 +61,7 @@ fn main() -> Result<()> {
 
     file.read_exact(&mut command)?;
 
-    let command = Command::from(&command);
+    let command = Command::from(command);
 
     println!("Command size: {:?}", size);
     if let Some(kind) = command.kind() {

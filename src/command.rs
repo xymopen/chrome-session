@@ -1,3 +1,6 @@
+use crate::transmute;
+use std::mem;
+
 pub type CommandID = u8;
 
 #[derive(Debug)]
@@ -89,17 +92,25 @@ impl CommandKind {
     }
 }
 
-pub struct Command<'a> {
+pub struct Command {
     id: CommandID,
-    payload: &'a [u8],
+    payload: Vec<u8>,
 }
 
-impl Command<'_> {
-    pub fn from(data: &[u8]) -> Command<'_> {
-        Command {
-            id: data[0],
-            payload: &data[1..],
-        }
+impl Command {
+    pub fn from(mut data: Vec<u8>) -> Command {
+        let id = {
+            let id_slice = &data[0..mem::size_of::<CommandID>()];
+            let id_ref = unsafe { transmute::as_ref::<CommandID>(id_slice).unwrap() };
+            *id_ref
+        };
+
+        let payload = data.split_off(mem::size_of::<CommandID>());
+
+        return Command {
+            id,
+            payload,
+        };
     }
 
     pub fn id(&self) -> CommandID {
@@ -107,7 +118,7 @@ impl Command<'_> {
     }
 
     pub fn payload(&self) -> &[u8] {
-        self.payload
+        self.payload.as_slice()
     }
 
     pub fn kind(&self) -> Option<CommandKind> {
@@ -115,36 +126,34 @@ impl Command<'_> {
     }
 }
 
-
-
 // Various payload structures.
 #[repr(C)]
 #[derive(Debug)]
 struct ClosedPayload {
-  id: u8,
-  close_time: i64,
+    id: u8,
+    close_time: i64,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct WindowBoundsPayload2 {
-  window_id: u8,
-  x: i32,
-  y: i32,
-  w: i32,
-  h: i32,
-  is_maximized: bool,
+    window_id: u8,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    is_maximized: bool,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct WindowBoundsPayload3 {
-  window_id: u8,
-  x: i32,
-  y: i32,
-  w: i32,
-  h: i32,
-  show_state: i32,
+    window_id: u8,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    show_state: i32,
 }
 
 type ActiveWindowPayload = u8;
@@ -152,8 +161,8 @@ type ActiveWindowPayload = u8;
 #[repr(C)]
 #[derive(Debug)]
 struct IDAndIndexPayload {
-  id: u8,
-  index: i32,
+    id: u8,
+    index: i32,
 }
 
 type TabIndexInWindowPayload = IDAndIndexPayload;
@@ -171,46 +180,46 @@ type TabNavigationPathPrunedFromFrontPayload = IDAndIndexPayload;
 #[repr(C)]
 #[derive(Debug)]
 struct TabNavigationPathPrunedPayload {
-  id: u8,
-  // Index starting which |count| entries were removed.
-  index: i32,
-  // Number of entries removed.
-  count: i32,
+    id: u8,
+    // Index starting which |count| entries were removed.
+    index: i32,
+    // Number of entries removed.
+    count: i32,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct SerializedToken {
-  // These fields correspond to the high and low fields of |base::Token|.
-  id_high: u64,
-  id_low: u64,
+    // These fields correspond to the high and low fields of |base::Token|.
+    id_high: u64,
+    id_low: u64,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct TabGroupPayload {
-  tab_id: u8,
-  maybe_group: SerializedToken,
-  has_group: bool,
+    tab_id: u8,
+    maybe_group: SerializedToken,
+    has_group: bool,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct PinnedStatePayload {
-  tab_id: u8,
-  pinned_state: bool,
+    tab_id: u8,
+    pinned_state: bool,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct LastActiveTimePayload {
-  tab_id: u8,
-  last_active_time: i64,
+    tab_id: u8,
+    last_active_time: i64,
 }
 
 #[repr(C)]
 #[derive(Debug)]
 struct VisibleOnAllWorkspacesPayload {
-  window_id: u8,
-  visible_on_all_workspaces: bool,
+    window_id: u8,
+    visible_on_all_workspaces: bool,
 }
