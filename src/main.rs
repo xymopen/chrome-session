@@ -2,13 +2,10 @@ mod command;
 mod transmute;
 
 pub use command::*;
+use std::convert::TryFrom;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind, Result};
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate maplit;
 
 const SESSION_PATH: &str = "./Session";
 
@@ -27,16 +24,36 @@ struct FileFeature {
     with_marker: bool,
 }
 
-type CommandSize = u16;
+#[derive(Debug)]
+struct InvalidFileVersion;
 
-lazy_static! {
-    static ref FILE_VERSION: std::collections::HashMap<i32, FileFeature> = hashmap! {
-        1 => FileFeature {  encrypted: false,   with_marker: false },
-        2 => FileFeature {  encrypted: true,    with_marker: false },
-        3 => FileFeature {  encrypted: false,   with_marker: true },
-        4 => FileFeature {  encrypted: true,    with_marker: true },
-    };
+impl TryFrom<i32> for FileFeature {
+    type Error = InvalidFileVersion;
+
+    fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
+        match value {
+            1 => Ok(FileFeature {
+                encrypted: false,
+                with_marker: false,
+            }),
+            2 => Ok(FileFeature {
+                encrypted: true,
+                with_marker: false,
+            }),
+            3 => Ok(FileFeature {
+                encrypted: false,
+                with_marker: true,
+            }),
+            4 => Ok(FileFeature {
+                encrypted: true,
+                with_marker: true,
+            }),
+            _ => Err(InvalidFileVersion),
+        }
+    }
 }
+
+type CommandSize = u16;
 
 fn main() -> Result<()> {
     let mut file = File::open(SESSION_PATH)?;
@@ -47,7 +64,7 @@ fn main() -> Result<()> {
     println!("{:#08x?}", header.signature);
     println!("{}", header.version);
 
-    let capability = FILE_VERSION.get(&header.version).unwrap();
+    let capability = FileFeature::try_from(header.version).unwrap();
 
     println!("{:?}", capability);
 
