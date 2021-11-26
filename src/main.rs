@@ -53,6 +53,17 @@ impl TryFrom<i32> for FileFeature {
     }
 }
 
+impl From<FileFeature> for i32 {
+    fn from(value: FileFeature) -> i32 {
+        match (value.encrypted, value.with_marker) {
+            (false, false) => 1,
+            (true, false) => 2,
+            (false, true) => 3,
+            (true, true) => 4,
+        }
+    }
+}
+
 type CommandSize = u16;
 
 fn main() -> Result<()> {
