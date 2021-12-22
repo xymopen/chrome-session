@@ -1,4 +1,5 @@
 mod command;
+mod serde_chromium_pickle;
 mod transmute;
 
 pub use command::*;
