@@ -6,4 +6,4 @@ edition = "2018"
 [features]
 
 [dependencies]
-serde = "1.0.130"
+serde = { version = "1.0.130", features = ["derive"] }
