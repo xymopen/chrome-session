@@ -79,26 +79,39 @@ fn main() -> Result<()> {
 
     println!("{:?}", capability);
 
-    let size = unsafe { transmute::from_reader::<CommandSize>(&mut file)? };
+    loop {
+        let size = unsafe {
+            match transmute::from_reader::<CommandSize>(&mut file) {
+                Ok(size) => {
+                    if size > 0 {
+                        size
+                    } else {
+                        return Err(Error::new(ErrorKind::InvalidData, "Invalid size"));
+                    }
+                }
+                Err(e) => {
+                    if e.kind() == ErrorKind::UnexpectedEof {
+                        return Ok(());
+                    } else {
+                        return Err(e);
+                    }
+                }
+            }
+        };
 
-    if size <= 0 {
-        return Err(Error::new(ErrorKind::InvalidData, "Invalid size"));
+        let mut command = vec![0; size as usize];
+
+        file.read_exact(&mut command)?;
+
+        let command = Command::from(command);
+
+        println!("Command size: {:?}", size);
+        if let Some(kind) = command.kind() {
+            println!("Command type: {:?}", kind);
+        } else {
+            println!("Command type: {:?}", command.id());
+        }
+        println!("Command body: {:?}", command.payload());
+        println!();
     }
-
-    let mut command = vec![0; size as usize];
-
-    file.read_exact(&mut command)?;
-
-    let command = Command::from(command);
-
-    println!("Command size: {:?}", size);
-    if let Some(kind) = command.kind() {
-        println!("Command type: {:?}", kind);
-    } else {
-        println!("Command type: {:?}", command.id());
-    }
-    println!("Command body: {:?}", command.payload());
-    println!();
-
-    return Ok(());
 }
