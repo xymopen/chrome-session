@@ -1,14 +1,14 @@
 use super::error::{Error, Result};
 use serde::{self, ser};
 use std::io::prelude::*;
+use std::io::Result as IOResult;
+use std::os::raw::c_int;
 
-pub struct Serializer<'a>(&'a mut dyn Write);
-
-impl<'a> Serializer<'a> {
-    pub fn new(writer: &'a mut dyn Write) -> Serializer<'a> {
-        return Serializer(writer);
-    }
+fn write_int<'a>(writer: &'a mut dyn Write, v: c_int) -> IOResult<()> {
+    return Ok(writer.write_all(&v.to_ne_bytes())?);
 }
+
+pub struct Serializer<'a>(pub &'a mut dyn Write);
 
 type Ok = ();
 
@@ -25,7 +25,7 @@ impl<'a> Serializer<'a> {
 }
 
 impl<'a> ser::Serializer for Serializer<'a> {
-    type Ok = ();
+    type Ok = Ok;
     type Error = Error;
     type SerializeSeq = ser::Impossible<Self::Ok, Self::Error>;
     type SerializeTuple = ser::Impossible<Self::Ok, Self::Error>;
@@ -40,8 +40,56 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     crate::forward_to_serialize_any! {
-        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str bytes none
-        some unit unit_struct unit_variant newtype_struct newtype_variant
+        i128 u128 char str bytes none some unit unit_struct unit_variant
+        newtype_struct newtype_variant
+    }
+
+    fn serialize_bool(self, v: bool) -> Result<Self::Ok> {
+        if v {
+            return Ok(write_int(self.0, 1)?);
+        } else {
+            return Ok(write_int(self.0, 0)?);
+        }
+    }
+
+    fn serialize_i8(self, v: i8) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_i16(self, v: i16) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_i32(self, v: i32) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_i64(self, v: i64) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_u8(self, v: u8) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_u16(self, v: u16) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_u32(self, v: u32) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_u64(self, v: u64) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_f32(self, v: f32) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+    }
+
+    fn serialize_f64(self, v: f64) -> Result<Self::Ok> {
+        return Ok(self.0.write_all(&v.to_ne_bytes())?);
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
