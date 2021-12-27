@@ -1,11 +1,18 @@
-use serde::{self, ser};
 use super::error::{Error, Result};
+use serde::{self, ser};
+use std::io::prelude::*;
 
-pub struct Serializer;
+pub struct Serializer<'a>(&'a mut dyn Write);
+
+impl<'a> Serializer<'a> {
+    pub fn new(writer: &'a mut dyn Write) -> Serializer<'a> {
+        return Serializer(writer);
+    }
+}
 
 type Ok = ();
 
-impl Serializer {
+impl<'a> Serializer<'a> {
     fn serialize_any_unit(self) -> Result<Ok> {
         unimplemented!();
     }
@@ -17,8 +24,8 @@ impl Serializer {
     }
 }
 
-impl ser::Serializer for Serializer {
-    type Ok = Ok;
+impl<'a> ser::Serializer for Serializer<'a> {
+    type Ok = ();
     type Error = Error;
     type SerializeSeq = ser::Impossible<Self::Ok, Self::Error>;
     type SerializeTuple = ser::Impossible<Self::Ok, Self::Error>;
