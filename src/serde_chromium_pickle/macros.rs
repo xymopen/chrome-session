@@ -10,18 +10,21 @@ macro_rules! forward_to_serialize_any_method {
     ($func:ident($($arg:ident : $ty:ty),*)) => {
         #[inline]
         fn $func(self, $($arg: $ty,)*) -> core::result::Result<Self::Ok, Self::Error> {
+            $(drop($arg);)*
             self.serialize_any_unit()
         }
     };
     ($func:ident<$l:ty>($($arg:ident : $ty:ty),*)) => {
         #[inline]
         fn $func(self, $($arg: $ty,)* v: $l) -> core::result::Result<Self::Ok, Self::Error> {
+            $(drop($arg);)*
             self.serialize_any(v)
         }
     };
     ($func:ident<T: ?Sized, $l:ty>($($arg:ident : $ty:ty),*)) => {
         #[inline]
         fn $func<T: ?Sized>(self, $($arg: $ty,)* v: $l) -> core::result::Result<Self::Ok, Self::Error> {
+            $(drop($arg);)*
             self.serialize_any_ref(v)
         }
     };
