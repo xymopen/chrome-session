@@ -30,7 +30,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
 
     serde::forward_to_deserialize_any! {
         i128 u128 char str string bytes byte_buf option unit unit_struct
-        newtype_struct struct map enum identifier
+        newtype_struct map enum identifier
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
@@ -156,6 +156,18 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         return visitor.visit_seq(SeqAccess(len, self.0));
+    }
+
+    fn deserialize_struct<V>(
+        self,
+        _name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        return visitor.visit_seq(SeqAccess(fields.len(), self.0));
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>

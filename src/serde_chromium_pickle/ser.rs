@@ -33,8 +33,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
     type SerializeTupleStruct = Self;
     type SerializeTupleVariant = Self;
     type SerializeMap = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeStruct = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeStructVariant = ser::Impossible<Self::Ok, Self::Error>;
+    type SerializeStruct = Self;
+    type SerializeStructVariant = Self;
 
     fn is_human_readable(&self) -> bool {
         return false;
@@ -129,7 +129,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
-        unimplemented!();
+        return Ok(self);
     }
 
     fn serialize_struct_variant(
@@ -139,7 +139,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        unimplemented!();
+        return Ok(self);
     }
 }
 
@@ -196,6 +196,38 @@ impl<'a> ser::SerializeTupleVariant for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + ser::Serialize,
+    {
+        ser::SerializeSeq::serialize_element(self, value)
+    }
+
+    fn end(self) -> Result<Self::Ok> {
+        ser::SerializeSeq::end(self)
+    }
+}
+
+impl<'a> ser::SerializeStruct for Serializer<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
+    where
+        T: ?Sized + ser::Serialize,
+    {
+        ser::SerializeSeq::serialize_element(self, value)
+    }
+
+    fn end(self) -> Result<Self::Ok> {
+        ser::SerializeSeq::end(self)
+    }
+}
+
+impl<'a> ser::SerializeStructVariant for Serializer<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + ser::Serialize,
     {
