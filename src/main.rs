@@ -9,6 +9,8 @@ use std::io::prelude::*;
 use std::io::{Error, ErrorKind, Result};
 use std::mem::size_of;
 
+use crate::serde_chromium_pickle::from_reader;
+
 const SESSION_PATH: &str = "./Session";
 
 // The signature at the beginning of the file = SSNS (Sessions).
@@ -126,14 +128,24 @@ fn main() -> Result<()> {
         let mut payload = vec![0; size as usize - size_of::<CommandID>()];
         file.read_exact(&mut payload)?;
 
-        println!("Command size: {:?}", size);
+        // println!("Command size: {:?}", size);
+        // if let Some(kind) = CommandKind::from(id) {
+        //     println!("Command type: {:?}", kind);
+        // } else {
+        //     println!("Command type: {:?}", id);
+        // }
+        // println!("Command body:");
+        // print_buffer(&payload);
+
         if let Some(kind) = CommandKind::from(id) {
-            println!("Command type: {:?}", kind);
-        } else {
-            println!("Command type: {:?}", id);
+            match kind {
+                CommandKind::UpdateTabNavigation => {
+                    let x: SerializedNavigationEntry = from_reader(&mut &payload[..]).unwrap();
+                    println!("{:?}", x);
+                }
+            }
         }
-        println!("Command body:");
-        print_buffer(&payload);
-        println!();
+
+        // println!();
     }
 }
