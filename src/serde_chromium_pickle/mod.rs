@@ -1,3 +1,4 @@
+mod bits;
 mod de;
 mod error;
 mod seq;

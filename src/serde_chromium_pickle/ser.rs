@@ -1,12 +1,22 @@
+use super::bits::align_up;
 use super::error::{Error, Result};
 use super::seq::SeqSerializer;
 use serde::{self, ser};
 use std::io::prelude::*;
 use std::io::Result as IOResult;
+use std::mem::size_of;
 use std::os::raw::c_int;
 
+fn write_aligned<'a>(writer: &'a mut dyn Write, buf: &[u8]) -> IOResult<()> {
+    let aligned_size = align_up(buf.len(), size_of::<u32>());
+    let padding = vec![0 as u8; aligned_size - buf.len()];
+    writer.write_all(buf)?;
+    writer.write_all(&padding)?;
+    return Ok(());
+}
+
 fn write_int<'a>(writer: &'a mut dyn Write, v: c_int) -> IOResult<()> {
-    return Ok(writer.write_all(&v.to_ne_bytes())?);
+    return Ok(write_aligned(writer, &v.to_ne_bytes())?);
 }
 
 pub struct Serializer<'a>(pub &'a mut dyn Write);
@@ -58,15 +68,15 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     fn serialize_i16(self, v: i16) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_i32(self, v: i32) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_i64(self, v: i64) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok> {
@@ -74,23 +84,23 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok> {
-        return Ok(self.0.write_all(&v.to_ne_bytes())?);
+        return Ok(write_aligned(self.0, &v.to_ne_bytes())?);
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {

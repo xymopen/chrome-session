@@ -1,3 +1,4 @@
+use super::bits::align_up;
 use super::error::{Error, Result};
 use super::seq::SeqDeserializer;
 use serde::{self, de};
@@ -6,9 +7,17 @@ use std::io::Result as IOResult;
 use std::mem::size_of;
 use std::os::raw::c_int;
 
+fn read_aligned<'a>(reader: &'a mut dyn Read, buf: &mut [u8]) -> IOResult<()> {
+    let aligned_size = align_up(buf.len(), size_of::<u32>());
+    let mut padding = vec![0 as u8; aligned_size - buf.len()];
+    reader.read_exact(buf)?;
+    reader.read_exact(&mut padding)?;
+    return Ok(());
+}
+
 fn read_int<'a>(reader: &'a mut dyn Read) -> IOResult<c_int> {
     let mut bytes: [u8; size_of::<c_int>()] = [0; size_of::<c_int>()];
-    reader.read_exact(&mut bytes)?;
+    read_aligned(reader, &mut bytes)?;
     return Ok(c_int::from_ne_bytes(bytes));
 }
 
@@ -46,7 +55,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<i8>()] = [0; size_of::<i8>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_i8(i8::from_ne_bytes(bytes));
     }
 
@@ -55,7 +64,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<i16>()] = [0; size_of::<i16>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_i16(i16::from_ne_bytes(bytes));
     }
 
@@ -64,7 +73,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<i32>()] = [0; size_of::<i32>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_i32(i32::from_ne_bytes(bytes));
     }
 
@@ -73,7 +82,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<i64>()] = [0; size_of::<i64>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_i64(i64::from_ne_bytes(bytes));
     }
 
@@ -82,7 +91,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<u8>()] = [0; size_of::<u8>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_u8(u8::from_ne_bytes(bytes));
     }
 
@@ -91,7 +100,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<u16>()] = [0; size_of::<u16>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_u16(u16::from_ne_bytes(bytes));
     }
 
@@ -100,7 +109,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<u32>()] = [0; size_of::<u32>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_u32(u32::from_ne_bytes(bytes));
     }
 
@@ -109,7 +118,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<u64>()] = [0; size_of::<u64>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_u64(u64::from_ne_bytes(bytes));
     }
 
@@ -118,7 +127,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<f32>()] = [0; size_of::<f32>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_f32(f32::from_ne_bytes(bytes));
     }
 
@@ -127,7 +136,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let mut bytes: [u8; size_of::<f64>()] = [0; size_of::<f64>()];
-        self.0.read_exact(&mut bytes)?;
+        read_aligned(self.0, &mut bytes)?;
         return visitor.visit_f64(f64::from_ne_bytes(bytes));
     }
 
