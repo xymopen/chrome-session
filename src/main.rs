@@ -66,6 +66,27 @@ impl From<FileFeature> for i32 {
 
 type CommandSize = u16;
 
+fn print_buffer(a: &[u8]) {
+    a.chunks(16).for_each(|line| {
+        line.iter().for_each(|c| {
+            print!("{:0>2x}", *c);
+            print!(" ");
+        });
+        for _ in 0..((16 - line.len()) * 3) {
+            print!(" ")
+        }
+        print!(" ");
+        line.iter().for_each(|c| match c {
+            0x20..=0x7e => print!("{}", *c as char),
+            _ => print!("."),
+        });
+        for _ in 0..(16 - line.len()) {
+            print!(" ")
+        }
+        println!();
+    });
+}
+
 fn main() -> Result<()> {
     let mut file = File::open(SESSION_PATH)?;
 
@@ -111,7 +132,8 @@ fn main() -> Result<()> {
         } else {
             println!("Command type: {:?}", command.id());
         }
-        println!("Command body: {:?}", command.payload());
+        println!("Command body:");
+        print_buffer(command.payload());
         println!();
     }
 }
