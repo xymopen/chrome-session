@@ -3,7 +3,7 @@ use super::super::Serializer;
 use serde::ser;
 use std::io::prelude::*;
 
-pub struct SeqSerializer<'a>(pub(crate) &'a mut dyn Write);
+pub(crate) struct SeqSerializer<'a>(pub(crate) &'a mut dyn Write);
 
 impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
     type Ok = ();

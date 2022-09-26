@@ -21,7 +21,17 @@ fn read_int<'a>(reader: &'a mut dyn Read) -> IOResult<c_int> {
     return Ok(c_int::from_ne_bytes(bytes));
 }
 
-pub struct Deserializer<'a>(pub &'a mut dyn Read);
+pub fn from_reader<'a, T>(reader: &mut dyn Read) -> Result<T>
+where
+    T: de::Deserialize<'a>,
+{
+    let size: u32 = de::Deserialize::deserialize(Deserializer(reader))?;
+    return Ok(de::Deserialize::deserialize(Deserializer(
+        &mut reader.take(size.into()),
+    ))?);
+}
+
+pub(crate) struct Deserializer<'a>(&'a mut dyn Read);
 
 impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
     type Error = Error;

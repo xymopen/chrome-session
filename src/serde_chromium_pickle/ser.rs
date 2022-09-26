@@ -19,7 +19,19 @@ fn write_int<'a>(writer: &'a mut dyn Write, v: c_int) -> IOResult<()> {
     return Ok(write_aligned(writer, &v.to_ne_bytes())?);
 }
 
-pub struct Serializer<'a>(pub &'a mut dyn Write);
+pub fn into_writer<'a, T>(value: &'a T, writer: &mut dyn Write) -> Result<Ok>
+where
+    T: ser::Serialize,
+{
+    // Payload size is hard to find at compile time due to align up
+    let mut payload = Vec::new();
+    value.serialize(Serializer(&mut payload))?;
+    ser::Serializer::serialize_u32(Serializer(writer), payload.len() as u32)?;
+    writer.write_all(&payload)?;
+    return Ok(());
+}
+
+pub(crate) struct Serializer<'a>(pub(crate) &'a mut dyn Write);
 
 type Ok = ();
 
