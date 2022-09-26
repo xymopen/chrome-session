@@ -1,4 +1,5 @@
 use super::error::{Error, Result};
+use super::seq::SeqDeserializer;
 use serde::{self, de};
 use std::io::prelude::*;
 use std::io::Result as IOResult;
@@ -29,7 +30,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
 
     serde::forward_to_deserialize_any! {
         i128 u128 char str string bytes byte_buf option unit unit_struct
-        newtype_struct struct seq tuple tuple_struct map enum identifier
+        newtype_struct struct tuple tuple_struct map enum identifier
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
@@ -128,6 +129,14 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         let mut bytes: [u8; size_of::<f64>()] = [0; size_of::<f64>()];
         self.0.read_exact(&mut bytes)?;
         return visitor.visit_f64(f64::from_ne_bytes(bytes));
+    }
+
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        let len = read_int(self.0)? as usize;
+        return visitor.visit_seq(SeqDeserializer(len, self.0));
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>

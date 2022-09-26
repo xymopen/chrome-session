@@ -1,4 +1,5 @@
 use serde::*;
+use std::ffi::CString;
 use std::os::raw::{c_int, c_long};
 
 use super::*;
@@ -18,6 +19,9 @@ fn encode_decode() -> Result<()> {
         u64,
         f32,
         f64,
+        Vec<u8>,
+        Vec<u16>,
+        Vec<u8>,
     );
 
     let mut vec = Vec::new();
@@ -34,6 +38,17 @@ fn encode_decode() -> Result<()> {
             0xCE8CA925_3104BDF7,
             3.1415926935,
             2.71828182845904523,
+            // Test raw string writing
+            ("Hello new world").into(),
+            vec![
+                'A' as u16,
+                'l' as u16,
+                'o' as u16,
+                'h' as u16,
+                'a' as u16,
+                '\0' as u16,
+            ],
+            ("AAA\0BBB\0").into(),
         ),
         &mut vec,
     )?;
@@ -50,6 +65,19 @@ fn encode_decode() -> Result<()> {
     assert_eq!(result.7, 0xCE8CA925_3104BDF7);
     assert_eq!(result.8, 3.1415926935);
     assert_eq!(result.9, 2.71828182845904523);
+    assert_eq!(result.10, Vec::from("Hello new world"));
+    assert_eq!(
+        result.11,
+        vec![
+            'A' as u16,
+            'l' as u16,
+            'o' as u16,
+            'h' as u16,
+            'a' as u16,
+            '\0' as u16,
+        ]
+    );
+    assert_eq!(result.12, Vec::from("AAA\0BBB\0"));
 
     return Ok(());
 }

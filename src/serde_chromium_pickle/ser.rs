@@ -1,4 +1,5 @@
 use super::error::{Error, Result};
+use super::seq::SeqSerializer;
 use serde::{self, ser};
 use std::io::prelude::*;
 use std::io::Result as IOResult;
@@ -27,7 +28,7 @@ impl<'a> Serializer<'a> {
 impl<'a> ser::Serializer for Serializer<'a> {
     type Ok = Ok;
     type Error = Error;
-    type SerializeSeq = ser::Impossible<Self::Ok, Self::Error>;
+    type SerializeSeq = SeqSerializer<'a>;
     type SerializeTuple = ser::Impossible<Self::Ok, Self::Error>;
     type SerializeTupleStruct = ser::Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = ser::Impossible<Self::Ok, Self::Error>;
@@ -92,8 +93,13 @@ impl<'a> ser::Serializer for Serializer<'a> {
         return Ok(self.0.write_all(&v.to_ne_bytes())?);
     }
 
-    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
-        unimplemented!();
+    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
+        if let Some(len) = len {
+            write_int(self.0, len as c_int)?;
+            return Ok(SeqSerializer(self.0));
+        } else {
+            return Err(ser::Error::custom("sequence length is not known"));
+        }
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {

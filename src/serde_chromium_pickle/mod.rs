@@ -1,5 +1,6 @@
 mod de;
 mod error;
+mod seq;
 mod ser;
 #[cfg(test)]
 mod test;
