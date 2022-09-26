@@ -7,6 +7,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind, Result};
+use std::mem::size_of;
 
 const SESSION_PATH: &str = "./Session";
 
@@ -121,20 +122,18 @@ fn main() -> Result<()> {
             }
         };
 
-        let mut command = vec![0; size as usize];
-
-        file.read_exact(&mut command)?;
-
-        let command = Command::from(command);
+        let id = unsafe { transmute::from_reader::<CommandID>(&mut file) }?;
+        let mut payload = vec![0; size as usize - size_of::<CommandID>()];
+        file.read_exact(&mut payload)?;
 
         println!("Command size: {:?}", size);
-        if let Some(kind) = command.kind() {
+        if let Some(kind) = CommandKind::from(id) {
             println!("Command type: {:?}", kind);
         } else {
-            println!("Command type: {:?}", command.id());
+            println!("Command type: {:?}", id);
         }
         println!("Command body:");
-        print_buffer(command.payload());
+        print_buffer(&payload);
         println!();
     }
 }
