@@ -29,9 +29,9 @@ impl<'a> ser::Serializer for Serializer<'a> {
     type Ok = Ok;
     type Error = Error;
     type SerializeSeq = SeqSerializer<'a>;
-    type SerializeTuple = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeTupleStruct = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeTupleVariant = ser::Impossible<Self::Ok, Self::Error>;
+    type SerializeTuple = Self;
+    type SerializeTupleStruct = Self;
+    type SerializeTupleVariant = Self;
     type SerializeMap = ser::Impossible<Self::Ok, Self::Error>;
     type SerializeStruct = ser::Impossible<Self::Ok, Self::Error>;
     type SerializeStructVariant = ser::Impossible<Self::Ok, Self::Error>;
@@ -103,7 +103,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
-        unimplemented!();
+        return Ok(self);
     }
 
     fn serialize_tuple_struct(
@@ -111,7 +111,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        unimplemented!();
+        return Ok(self);
     }
 
     fn serialize_tuple_variant(
@@ -121,7 +121,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        unimplemented!();
+        return Ok(self);
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
@@ -140,5 +140,69 @@ impl<'a> ser::Serializer for Serializer<'a> {
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
         unimplemented!();
+    }
+}
+
+impl<'a> ser::SerializeSeq for Serializer<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + ser::Serialize,
+    {
+        value.serialize(Serializer(self.0))
+    }
+
+    fn end(self) -> Result<Self::Ok> {
+        return Ok(());
+    }
+}
+
+impl<'a> ser::SerializeTuple for Serializer<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + ser::Serialize,
+    {
+        ser::SerializeSeq::serialize_element(self, value)
+    }
+
+    fn end(self) -> Result<Self::Ok> {
+        ser::SerializeSeq::end(self)
+    }
+}
+
+impl<'a> ser::SerializeTupleStruct for Serializer<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + ser::Serialize,
+    {
+        ser::SerializeSeq::serialize_element(self, value)
+    }
+
+    fn end(self) -> Result<Self::Ok> {
+        ser::SerializeSeq::end(self)
+    }
+}
+
+impl<'a> ser::SerializeTupleVariant for Serializer<'a> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    where
+        T: ?Sized + ser::Serialize,
+    {
+        ser::SerializeSeq::serialize_element(self, value)
+    }
+
+    fn end(self) -> Result<Self::Ok> {
+        ser::SerializeSeq::end(self)
     }
 }

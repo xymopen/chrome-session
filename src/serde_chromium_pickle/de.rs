@@ -30,7 +30,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
 
     serde::forward_to_deserialize_any! {
         i128 u128 char str string bytes byte_buf option unit unit_struct
-        newtype_struct struct tuple tuple_struct map enum identifier
+        newtype_struct struct map enum identifier
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
@@ -139,10 +139,52 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         return visitor.visit_seq(SeqDeserializer(len, self.0));
     }
 
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        return visitor.visit_seq(SeqAccess(len, self.0));
+    }
+
+    fn deserialize_tuple_struct<V>(
+        self,
+        _name: &'de str,
+        len: usize,
+        visitor: V,
+    ) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        return visitor.visit_seq(SeqAccess(len, self.0));
+    }
+
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         return visitor.visit_unit();
+    }
+}
+
+struct SeqAccess<'a>(usize, &'a mut dyn Read);
+
+impl<'a, 'de> de::SeqAccess<'de> for SeqAccess<'a> {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+    where
+        T: de::DeserializeSeed<'de>,
+    {
+        if self.0 == 0 {
+            return Ok(None);
+        } else {
+            self.0 -= 1;
+
+            return seed.deserialize(Deserializer(self.1)).map(Into::into);
+        }
+    }
+
+    fn size_hint(&self) -> Option<usize> {
+        return Some(self.0);
     }
 }
