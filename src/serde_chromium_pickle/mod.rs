@@ -8,6 +8,7 @@ mod ser;
 mod test;
 #[macro_use]
 mod macros;
+pub mod helpers;
 
 pub use de::from_reader;
 pub(crate) use de::Deserializer;
