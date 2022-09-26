@@ -20,6 +20,7 @@ fn encode_decode() -> Result<()> {
         f32,
         f64,
         #[serde(with = "helpers::cstring")] CString,
+        #[serde(with = "helpers::string")] String,
         Vec<u8>,
         Vec<u16>,
         Vec<u8>,
@@ -41,6 +42,7 @@ fn encode_decode() -> Result<()> {
             2.71828182845904523,
             // note non-aligned string length
             CString::new("Hello world").unwrap(),
+            ("Hello, world").into(),
             // Test raw string writing
             ("Hello new world").into(),
             vec![
@@ -69,9 +71,10 @@ fn encode_decode() -> Result<()> {
     assert_eq!(result.8, 3.1415926935);
     assert_eq!(result.9, 2.71828182845904523);
     assert_eq!(result.10, CString::new("Hello world").unwrap());
-    assert_eq!(result.11, Vec::from("Hello new world"));
+    assert_eq!(result.11, String::from("Hello, world"));
+    assert_eq!(result.12, Vec::from("Hello new world"));
     assert_eq!(
-        result.12,
+        result.13,
         vec![
             'A' as u16,
             'l' as u16,
@@ -81,7 +84,7 @@ fn encode_decode() -> Result<()> {
             '\0' as u16,
         ]
     );
-    assert_eq!(result.13, Vec::from("AAA\0BBB\0"));
+    assert_eq!(result.14, Vec::from("AAA\0BBB\0"));
 
     return Ok(());
 }
