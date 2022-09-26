@@ -1,4 +1,5 @@
 mod bits;
+mod count;
 mod de;
 mod error;
 mod seq;

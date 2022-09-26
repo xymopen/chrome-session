@@ -1,12 +1,17 @@
-use super::super::error::{Error, Result};
+use super::super::{
+    bits::align_up,
+    count::WriteCount,
+    error::{Error, Result},
+};
 use serde::ser;
 use std::io::prelude::*;
+use std::mem::size_of;
 
-pub(crate) struct SeqSerializer<'a>(pub(crate) &'a mut dyn Write);
+struct ElSerializer<'a>(&'a mut dyn Write);
 
 type Ok = ();
 
-impl<'a> SeqSerializer<'a> {
+impl<'a> ElSerializer<'a> {
     fn serialize_any_unit(self) -> Result<Ok> {
         unimplemented!();
     }
@@ -18,7 +23,7 @@ impl<'a> SeqSerializer<'a> {
     }
 }
 
-impl<'a> ser::Serializer for SeqSerializer<'a> {
+impl<'a> ser::Serializer for ElSerializer<'a> {
     type Ok = Ok;
     type Error = Error;
     type SerializeSeq = ser::Impossible<Self::Ok, Self::Error>;
@@ -124,6 +129,14 @@ impl<'a> ser::Serializer for SeqSerializer<'a> {
     }
 }
 
+pub(crate) struct SeqSerializer<'a>(WriteCount<'a>);
+
+impl<'a> SeqSerializer<'a> {
+    pub(crate) fn new(write: &'a mut dyn Write) -> Self {
+        SeqSerializer(write.into())
+    }
+}
+
 impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
     type Ok = ();
     type Error = Error;
@@ -132,10 +145,15 @@ impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
     where
         T: ?Sized + ser::Serialize,
     {
-        value.serialize(SeqSerializer(self.0))
+        value.serialize(ElSerializer(&mut self.0))
     }
 
-    fn end(self) -> Result<Self::Ok> {
+    fn end(mut self) -> Result<Self::Ok> {
+        let written = self.0.count();
+        let mut padding = vec![0 as u8; align_up(written, size_of::<u32>()) - written];
+        self.0.write_all(&mut padding)?;
+        drop(padding);
+
         return Ok(());
     }
 }

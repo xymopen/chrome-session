@@ -1,4 +1,8 @@
-use super::super::error::{Error, Result};
+use super::super::{
+    bits::align_up,
+    count::ReadCount,
+    error::{Error, Result},
+};
 use serde::de;
 use std::io::prelude::*;
 use std::mem::size_of;
@@ -123,7 +127,13 @@ impl<'a, 'de> de::Deserializer<'de> for ElDeserializer<'a> {
     }
 }
 
-pub(crate) struct SeqDeserializer<'a>(pub(crate) usize, pub(crate) &'a mut dyn Read);
+pub(crate) struct SeqDeserializer<'a>(usize, ReadCount<'a>);
+
+impl<'a> SeqDeserializer<'a> {
+    pub(crate) fn new(len: usize, read: &'a mut dyn Read) -> Self {
+        SeqDeserializer(len, read.into())
+    }
+}
 
 impl<'a, 'de> de::SeqAccess<'de> for SeqDeserializer<'a> {
     type Error = Error;
@@ -133,11 +143,18 @@ impl<'a, 'de> de::SeqAccess<'de> for SeqDeserializer<'a> {
         T: de::DeserializeSeed<'de>,
     {
         if self.0 == 0 {
+            let read = self.1.count();
+            let mut padding = vec![0 as u8; align_up(read, size_of::<u32>()) - read];
+            self.1.read_exact(&mut padding)?;
+            drop(padding);
+
             return Ok(None);
         } else {
             self.0 -= 1;
 
-            return seed.deserialize(ElDeserializer(self.1)).map(Into::into);
+            return seed
+                .deserialize(ElDeserializer(&mut self.1))
+                .map(Into::into);
         }
     }
 

@@ -118,7 +118,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
         if let Some(len) = len {
             write_int(self.0, len as c_int)?;
-            return Ok(SeqSerializer(self.0));
+            return Ok(SeqSerializer::new(self.0));
         } else {
             return Err(ser::Error::custom("sequence length is not known"));
         }

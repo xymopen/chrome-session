@@ -155,7 +155,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
         V: de::Visitor<'de>,
     {
         let len = read_int(self.0)? as usize;
-        return visitor.visit_seq(SeqDeserializer(len, self.0));
+        return visitor.visit_seq(SeqDeserializer::new(len, self.0));
     }
 
     fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
