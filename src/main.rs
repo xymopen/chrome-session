@@ -11,8 +11,6 @@ use std::mem::size_of;
 
 use crate::serde_chromium_pickle::from_reader;
 
-const SESSION_PATH: &str = "./Session";
-
 // The signature at the beginning of the file = SSNS (Sessions).
 const FILE_SIGNATURE: i32 = 0x53534E53;
 
@@ -92,17 +90,19 @@ fn print_buffer(a: &[u8]) {
 }
 
 fn main() -> Result<()> {
-    let mut file = File::open(SESSION_PATH)?;
+    let args: Vec<_> = std::env::args().collect();
+
+    if args.len() < 2 {
+        println!("Usage: chrome-session <path/to/snss>");
+
+        return Ok(());
+    }
+
+    let mut file = File::open(args[1].to_owned())?;
 
     let header = unsafe { transmute::from_reader::<FileHeader>(&mut file)? };
 
     assert!(header.signature == FILE_SIGNATURE);
-    println!("{:#08x?}", header.signature);
-    println!("{}", header.version);
-
-    let capability = FileFeature::try_from(header.version).unwrap();
-
-    println!("{:?}", capability);
 
     loop {
         let size = unsafe {
@@ -128,24 +128,13 @@ fn main() -> Result<()> {
         let mut payload = vec![0; size as usize - size_of::<CommandID>()];
         file.read_exact(&mut payload)?;
 
-        // println!("Command size: {:?}", size);
-        // if let Some(kind) = CommandKind::from(id) {
-        //     println!("Command type: {:?}", kind);
-        // } else {
-        //     println!("Command type: {:?}", id);
-        // }
-        // println!("Command body:");
-        // print_buffer(&payload);
-
         if let Some(kind) = CommandKind::from(id) {
             match kind {
                 CommandKind::UpdateTabNavigation => {
                     let x: SerializedNavigationEntry = from_reader(&mut &payload[..]).unwrap();
-                    println!("{:?}", x);
+                    println!("{} - {}", x.title, x.virtual_url.to_str().unwrap());
                 }
             }
         }
-
-        // println!();
     }
 }
