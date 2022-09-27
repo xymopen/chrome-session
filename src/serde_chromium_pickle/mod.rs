@@ -1,6 +1,8 @@
 mod de;
 mod error;
 mod ser;
+#[cfg(test)]
+mod test;
 #[macro_use]
 mod macros;
 
