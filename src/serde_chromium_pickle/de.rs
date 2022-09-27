@@ -26,6 +26,15 @@ where
     T: de::Deserialize<'a>,
 {
     let size: u32 = de::Deserialize::deserialize(Deserializer(reader))?;
+
+    {
+        let size = size as usize;
+
+        if size != align_up(size, size_of::<u32>()) {
+            return Err(de::Error::custom("payload is not aligned"));
+        }
+    }
+
     return Ok(de::Deserialize::deserialize(Deserializer(
         &mut reader.take(size.into()),
     ))?);
@@ -154,8 +163,13 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
     where
         V: de::Visitor<'de>,
     {
-        let len = read_int(self.0)? as usize;
-        return visitor.visit_seq(SeqDeserializer::new(len, self.0));
+        let len = read_int(self.0)?;
+
+        if len < 0 {
+            return Err(de::Error::custom("invalid sequence length"));
+        } else {
+            return visitor.visit_seq(SeqDeserializer::new(len as usize, self.0));
+        }
     }
 
     fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>

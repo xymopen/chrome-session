@@ -88,3 +88,68 @@ fn encode_decode() -> Result<()> {
 
     return Ok(());
 }
+
+#[test]
+fn unaligned_size() -> Result<()> {
+    let buffer = [10 as u32, 25, 40];
+    let vec: Vec<u8> = buffer.iter().flat_map(|e| e.to_ne_bytes()).collect();
+
+    assert!(
+        from_reader::<(u32, u32)>(&mut vec.as_slice())
+            .unwrap_err()
+            .to_string()
+            == "payload is not aligned"
+    );
+
+    return Ok(());
+}
+
+#[test]
+fn zero_len_cstr() -> Result<()> {
+    let mut vec = Vec::new();
+    into_writer(&[0 as u8; 0], &mut vec)?;
+
+    assert_eq!(from_reader::<[u8; 0]>(&mut vec.as_slice())?, [0 as u8; 0]);
+
+    return Ok(());
+}
+
+#[test]
+fn zero_len_str() -> Result<()> {
+    let mut vec = Vec::new();
+    into_writer(&[0 as u8; 0], &mut vec)?;
+
+    assert_eq!(from_reader::<[u16; 0]>(&mut vec.as_slice())?, [0 as u16; 0]);
+
+    return Ok(());
+}
+
+#[test]
+fn bad_len_cstr() -> Result<()> {
+    let mut vec = Vec::new();
+    into_writer(&(-2,), &mut vec)?;
+
+    assert!(
+        from_reader::<Vec<u8>>(&mut vec.as_slice())
+            .unwrap_err()
+            .to_string()
+            == "invalid sequence length"
+    );
+
+    return Ok(());
+}
+
+#[test]
+fn bad_len_str() -> Result<()> {
+    let mut vec = Vec::new();
+    into_writer(&(-2,), &mut vec)?;
+
+    assert!(
+        from_reader::<Vec<u16>>(&mut vec.as_slice())
+            .unwrap_err()
+            .to_string()
+            == "invalid sequence length"
+    );
+
+    return Ok(());
+}
