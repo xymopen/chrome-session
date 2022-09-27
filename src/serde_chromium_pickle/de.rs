@@ -197,7 +197,7 @@ impl<'a, 'de> de::Deserializer<'de> for Deserializer<'a> {
     }
 }
 
-struct SeqAccess<'a>(usize, &'a mut dyn Read);
+pub(crate) struct SeqAccess<'a>(pub(crate) usize, pub(crate) &'a mut dyn Read);
 
 impl<'a, 'de> de::SeqAccess<'de> for SeqAccess<'a> {
     type Error = Error;

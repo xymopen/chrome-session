@@ -2,6 +2,7 @@ use super::super::{
     bits::align_up,
     count::ReadCount,
     error::{Error, Result},
+    de::SeqAccess,
 };
 use serde::de;
 use std::io::prelude::*;
@@ -25,8 +26,7 @@ impl<'a, 'de> de::Deserializer<'de> for ElDeserializer<'a> {
 
     serde::forward_to_deserialize_any! {
         bool i128 u128 char str string bytes byte_buf option unit
-        unit_struct newtype_struct struct seq tuple tuple_struct map
-        enum identifier
+        unit_struct newtype_struct seq map enum identifier
     }
 
     fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value>
@@ -117,6 +117,37 @@ impl<'a, 'de> de::Deserializer<'de> for ElDeserializer<'a> {
         let mut bytes: [u8; size_of::<f64>()] = [0; size_of::<f64>()];
         self.0.read_exact(&mut bytes)?;
         return visitor.visit_f64(f64::from_ne_bytes(bytes));
+    }
+
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        return visitor.visit_seq(SeqAccess(len, self.0));
+    }
+
+    fn deserialize_tuple_struct<V>(
+        self,
+        _name: &'de str,
+        len: usize,
+        visitor: V,
+    ) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        return visitor.visit_seq(SeqAccess(len, self.0));
+    }
+
+    fn deserialize_struct<V>(
+        self,
+        _name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value>
+    where
+        V: de::Visitor<'de>,
+    {
+        return visitor.visit_seq(SeqAccess(fields.len(), self.0));
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>

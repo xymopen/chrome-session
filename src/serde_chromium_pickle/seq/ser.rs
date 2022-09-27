@@ -2,6 +2,7 @@ use super::super::{
     bits::align_up,
     count::WriteCount,
     error::{Error, Result},
+    ser::Serializer,
 };
 use serde::ser;
 use std::io::prelude::*;
@@ -27,12 +28,12 @@ impl<'a> ser::Serializer for ElSerializer<'a> {
     type Ok = Ok;
     type Error = Error;
     type SerializeSeq = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeTuple = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeTupleStruct = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeTupleVariant = ser::Impossible<Self::Ok, Self::Error>;
+    type SerializeTuple = Serializer<'a>;
+    type SerializeTupleStruct = Serializer<'a>;
+    type SerializeTupleVariant = Serializer<'a>;
     type SerializeMap = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeStruct = ser::Impossible<Self::Ok, Self::Error>;
-    type SerializeStructVariant = ser::Impossible<Self::Ok, Self::Error>;
+    type SerializeStruct = Serializer<'a>;
+    type SerializeStructVariant = Serializer<'a>;
 
     fn is_human_readable(&self) -> bool {
         return false;
@@ -89,7 +90,7 @@ impl<'a> ser::Serializer for ElSerializer<'a> {
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
-        unimplemented!();
+        return Ok(Serializer(self.0));
     }
 
     fn serialize_tuple_struct(
@@ -97,7 +98,7 @@ impl<'a> ser::Serializer for ElSerializer<'a> {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        unimplemented!();
+        return Ok(Serializer(self.0));
     }
 
     fn serialize_tuple_variant(
@@ -107,7 +108,7 @@ impl<'a> ser::Serializer for ElSerializer<'a> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        unimplemented!();
+        return Ok(Serializer(self.0));
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
@@ -115,7 +116,7 @@ impl<'a> ser::Serializer for ElSerializer<'a> {
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
-        unimplemented!();
+        return Ok(Serializer(self.0));
     }
 
     fn serialize_struct_variant(
@@ -125,7 +126,7 @@ impl<'a> ser::Serializer for ElSerializer<'a> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        unimplemented!();
+        return Ok(Serializer(self.0));
     }
 }
 
